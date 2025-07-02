@@ -2,6 +2,7 @@ import { TreeNode } from "./InputForm";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Folder, FolderOpen } from "lucide-react";
 
 interface NodeDetailsProps {
@@ -50,8 +51,8 @@ export function NodeDetails({ node }: NodeDetailsProps) {
   const hasChildren = node.children && node.children.length > 0;
 
   return (
-    <Card className="w-full h-full bg-gradient-surface border-border/50">
-      <CardHeader>
+    <Card className="w-full h-full bg-gradient-surface border-border/50 flex flex-col">
+      <CardHeader className="flex-shrink-0">
         <CardTitle className="flex items-center gap-2 text-foreground">
           {node.type === "folder" ? (
             node.expanded !== false ? (
@@ -66,7 +67,8 @@ export function NodeDetails({ node }: NodeDetailsProps) {
         </CardTitle>
       </CardHeader>
       
-      <CardContent className="space-y-6">
+      <ScrollArea className="flex-1">
+        <CardContent className="space-y-6">
         {/* Basic Info */}
         <div className="space-y-3">
           <div>
@@ -181,7 +183,8 @@ export function NodeDetails({ node }: NodeDetailsProps) {
             )}
           </div>
         </div>
-      </CardContent>
+        </CardContent>
+      </ScrollArea>
     </Card>
   );
 }

@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Folder, FileJson } from "lucide-react";
 
 export interface TreeNode {
@@ -182,14 +183,15 @@ export function InputForm({ onDataSubmit }: InputFormProps) {
   };
 
   return (
-    <Card className="w-full bg-gradient-surface border-border/50">
-      <CardHeader>
+    <Card className="w-full h-full bg-gradient-surface border-border/50 flex flex-col">
+      <CardHeader className="flex-shrink-0">
         <CardTitle className="flex items-center gap-2 text-foreground">
           <FileJson className="h-5 w-5 text-primary" />
           Data Input
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <ScrollArea className="flex-1">
+        <CardContent>
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-2 bg-muted/30">
             <TabsTrigger value="json" className="flex items-center gap-2">
@@ -259,7 +261,8 @@ export function InputForm({ onDataSubmit }: InputFormProps) {
             </div>
           </form>
         </Tabs>
-      </CardContent>
+        </CardContent>
+      </ScrollArea>
     </Card>
   );
 }
