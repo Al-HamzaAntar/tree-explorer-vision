@@ -51,8 +51,8 @@ export function NodeDetails({ node }: NodeDetailsProps) {
   const hasChildren = node.children && node.children.length > 0;
 
   return (
-    <Card className="w-full h-full bg-gradient-surface border-border/50 flex flex-col">
-      <CardHeader className="flex-shrink-0">
+    <Card className="w-full h-full bg-gradient-surface border-border/50 flex flex-col max-h-full">
+      <CardHeader className="flex-shrink-0 pb-3">
         <CardTitle className="flex items-center gap-2 text-foreground">
           {node.type === "folder" ? (
             node.expanded !== false ? (
@@ -67,8 +67,8 @@ export function NodeDetails({ node }: NodeDetailsProps) {
         </CardTitle>
       </CardHeader>
       
-      <ScrollArea className="flex-1">
-        <CardContent className="space-y-6">
+      <ScrollArea className="flex-1 overflow-hidden">
+        <CardContent className="space-y-6 px-6 pb-6">
         {/* Basic Info */}
         <div className="space-y-3">
           <div>
