@@ -61,7 +61,21 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
-				}
+				},
+				// Custom visualization colors
+				'folder-node': 'hsl(var(--folder-node))',
+				'file-node': 'hsl(var(--file-node))',
+				'connection-line': 'hsl(var(--connection-line))',
+				'node-hover': 'hsl(var(--node-hover))',
+				'selected-node': 'hsl(var(--selected-node))'
+			},
+			backgroundImage: {
+				'gradient-primary': 'var(--gradient-primary)',
+				'gradient-surface': 'var(--gradient-surface)'
+			},
+			transitionTimingFunction: {
+				'smooth': 'cubic-bezier(0.4, 0, 0.2, 1)',
+				'bounce': 'cubic-bezier(0.68, -0.55, 0.265, 1.55)'
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
