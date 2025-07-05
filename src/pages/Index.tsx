@@ -26,6 +26,16 @@ const Index = () => {
     setTreeData(data);
     setSelectedNode(null);
     setSearchTerm("");
+    
+    // Save to localStorage
+    localStorage.setItem('folderTreeData', JSON.stringify(data));
+  };
+
+  const handleDataUpdate = (data: TreeNode) => {
+    setTreeData(data);
+    
+    // Save updated data to localStorage
+    localStorage.setItem('folderTreeData', JSON.stringify(data));
   };
 
   const handleNodeSelect = (node: TreeNode) => {
@@ -51,7 +61,7 @@ const Index = () => {
               </p>
             </div>
             <div className="hidden lg:flex items-center gap-4 text-sm text-muted-foreground">
-              <span>Zoom & Pan • Click to Expand • Hover for Details</span>
+              <span>Zoom & Pan • Click to Expand • Drag to Move • Hover for Details</span>
             </div>
           </div>
         </div>
@@ -76,6 +86,7 @@ const Index = () => {
               data={treeData}
               selectedNode={selectedNode}
               onNodeSelect={handleNodeSelect}
+              onDataUpdate={handleDataUpdate}
               searchTerm={searchTerm}
             />
           </div>

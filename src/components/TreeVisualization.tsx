@@ -6,6 +6,7 @@ interface TreeVisualizationProps {
   data: TreeNode | null;
   selectedNode: TreeNode | null;
   onNodeSelect: (node: TreeNode) => void;
+  onDataUpdate?: (data: TreeNode) => void;
   searchTerm: string;
 }
 
@@ -23,6 +24,7 @@ export function TreeVisualization({
   data, 
   selectedNode, 
   onNodeSelect, 
+  onDataUpdate,
   searchTerm 
 }: TreeVisualizationProps) {
   const [zoom, setZoom] = useState(1);
@@ -32,6 +34,9 @@ export function TreeVisualization({
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
+  const [draggedNode, setDraggedNode] = useState<TreeNode | null>(null);
+  const [dropTarget, setDropTarget] = useState<TreeNode | null>(null);
+  const [isNodeDragging, setIsNodeDragging] = useState(false);
   const svgRef = useRef<SVGSVGElement>(null);
 
   const NODE_WIDTH = 120;
@@ -158,9 +163,120 @@ export function TreeVisualization({
   };
 
   const getNodeColor = (node: TreeNode) => {
+    if (draggedNode?.id === node.id) return "hsl(var(--muted))";
+    if (dropTarget?.id === node.id && node.type === "folder") return "hsl(var(--ring))";
     if (selectedNode?.id === node.id) return "hsl(var(--selected-node))";
     if (isNodeHighlighted(node)) return "hsl(var(--node-hover))";
     return node.type === "folder" ? "hsl(var(--folder-node))" : "hsl(var(--file-node))";
+  };
+
+  // Drag and drop utility functions
+  const isValidMove = (draggedNode: TreeNode, targetNode: TreeNode): boolean => {
+    if (draggedNode.id === targetNode.id) return false;
+    if (targetNode.type !== "folder") return false;
+    
+    // Check if target is a descendant of dragged node
+    const isDescendant = (node: TreeNode, ancestorId: string): boolean => {
+      if (node.id === ancestorId) return true;
+      return node.children?.some(child => isDescendant(child, ancestorId)) || false;
+    };
+    
+    return !isDescendant(targetNode, draggedNode.id);
+  };
+
+  const removeNodeFromTree = (tree: TreeNode, nodeId: string): TreeNode => {
+    const newTree = { ...tree };
+    
+    const removeFromChildren = (parent: TreeNode): boolean => {
+      if (!parent.children) return false;
+      
+      const childIndex = parent.children.findIndex(child => child.id === nodeId);
+      if (childIndex !== -1) {
+        parent.children = parent.children.filter((_, index) => index !== childIndex);
+        return true;
+      }
+      
+      return parent.children.some(child => removeFromChildren(child));
+    };
+    
+    if (newTree.id === nodeId) {
+      return newTree;
+    }
+    
+    removeFromChildren(newTree);
+    return newTree;
+  };
+
+  const addNodeToParent = (tree: TreeNode, parentId: string, nodeToAdd: TreeNode): TreeNode => {
+    const newTree = { ...tree };
+    
+    const addToChildren = (parent: TreeNode): boolean => {
+      if (parent.id === parentId) {
+        if (!parent.children) parent.children = [];
+        parent.children.push(nodeToAdd);
+        return true;
+      }
+      
+      return parent.children?.some(child => addToChildren(child)) || false;
+    };
+    
+    addToChildren(newTree);
+    return newTree;
+  };
+
+  const handleNodeDragStart = (e: React.DragEvent, node: TreeNode) => {
+    e.stopPropagation();
+    setDraggedNode(node);
+    setIsNodeDragging(true);
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleNodeDragOver = (e: React.DragEvent, node: TreeNode) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (draggedNode && isValidMove(draggedNode, node)) {
+      setDropTarget(node);
+      e.dataTransfer.dropEffect = "move";
+    } else {
+      setDropTarget(null);
+      e.dataTransfer.dropEffect = "none";
+    }
+  };
+
+  const handleNodeDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDropTarget(null);
+  };
+
+  const handleNodeDrop = (e: React.DragEvent, targetNode: TreeNode) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!draggedNode || !isValidMove(draggedNode, targetNode)) {
+      return;
+    }
+    
+    if (data && onDataUpdate) {
+      // Remove node from current position
+      let updatedTree = removeNodeFromTree(data, draggedNode.id);
+      
+      // Add node to new parent
+      updatedTree = addNodeToParent(updatedTree, targetNode.id, draggedNode);
+      
+      onDataUpdate(updatedTree);
+    }
+    
+    setDraggedNode(null);
+    setDropTarget(null);
+    setIsNodeDragging(false);
+  };
+
+  const handleNodeDragEnd = () => {
+    setDraggedNode(null);
+    setDropTarget(null);
+    setIsNodeDragging(false);
   };
 
   const renderConnections = () => {
@@ -230,7 +346,15 @@ export function TreeVisualization({
           {renderConnections()}
           
           {nodePositions.map(node => (
-            <g key={node.id}>
+            <g 
+              key={node.id}
+              onDragStart={(e) => handleNodeDragStart(e, node)}
+              onDragOver={(e) => handleNodeDragOver(e, node)}
+              onDragLeave={handleNodeDragLeave}
+              onDrop={(e) => handleNodeDrop(e, node)}
+              onDragEnd={handleNodeDragEnd}
+              style={{ cursor: isNodeDragging ? 'grabbing' : 'grab' }}
+            >
               <rect
                 x={node.x}
                 y={node.y}
