@@ -80,6 +80,28 @@ export function TreeVisualization({
     onNodeSelect(node);
   };
 
+  const handleNodeRename = (nodeId: string, newName: string) => {
+    if (!data || !onDataUpdate) return;
+    
+    const updateNodeName = (node: TreeNode): TreeNode => {
+      if (node.id === nodeId) {
+        return { ...node, name: newName };
+      }
+      
+      if (node.children) {
+        return {
+          ...node,
+          children: node.children.map(updateNodeName)
+        };
+      }
+      
+      return node;
+    };
+    
+    const updatedData = updateNodeName(data);
+    onDataUpdate(updatedData);
+  };
+
   const handleMouseDown = (e: React.MouseEvent) => {
     if (e.target === svgRef.current) {
       setIsDragging(true);
@@ -168,6 +190,7 @@ export function TreeVisualization({
               onNodeDragLeave={handleNodeDragLeave}
               onNodeDrop={(e, targetNode) => handleNodeDrop(e, targetNode, data, onDataUpdate)}
               onNodeDragEnd={handleNodeDragEnd}
+              onNodeRename={handleNodeRename}
             />
           ))}
         </g>

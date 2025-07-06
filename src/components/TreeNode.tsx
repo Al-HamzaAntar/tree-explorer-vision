@@ -1,6 +1,7 @@
 import { TreeNode as TreeNodeType } from "./InputForm";
 import { NodePosition } from "@/types/tree";
 import { Folder, FolderOpen } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
 
 interface TreeNodeProps {
   node: NodePosition;
@@ -21,6 +22,7 @@ interface TreeNodeProps {
   onNodeDragLeave: (e: React.DragEvent) => void;
   onNodeDrop: (e: React.DragEvent, node: TreeNodeType) => void;
   onNodeDragEnd: () => void;
+  onNodeRename: (nodeId: string, newName: string) => void;
 }
 
 export function TreeNode({
@@ -42,7 +44,45 @@ export function TreeNode({
   onNodeDragLeave,
   onNodeDrop,
   onNodeDragEnd,
+  onNodeRename,
 }: TreeNodeProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState(node.name);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isEditing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [isEditing]);
+
+  const handleDoubleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsEditing(true);
+    setEditName(node.name);
+  };
+
+  const handleSave = () => {
+    const trimmedName = editName.trim();
+    if (trimmedName && trimmedName !== node.name) {
+      onNodeRename(node.id, trimmedName);
+    }
+    setIsEditing(false);
+  };
+
+  const handleCancel = () => {
+    setEditName(node.name);
+    setIsEditing(false);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSave();
+    } else if (e.key === 'Escape') {
+      handleCancel();
+    }
+  };
   const isNodeHighlighted = () => {
     if (!searchTerm) return false;
     return node.name.toLowerCase().includes(searchTerm.toLowerCase());
@@ -76,6 +116,7 @@ export function TreeNode({
         strokeWidth="2"
         className="cursor-pointer transition-all duration-200 hover:opacity-80"
         onClick={() => onNodeClick(node)}
+        onDoubleClick={handleDoubleClick}
         onMouseEnter={() => onMouseEnter(node.id)}
         onMouseLeave={onMouseLeave}
       />
@@ -85,20 +126,32 @@ export function TreeNode({
         y={node.y + 8}
         width={nodeWidth - 16}
         height={nodeHeight - 16}
-        className="pointer-events-none"
+        className={isEditing ? "pointer-events-auto" : "pointer-events-none"}
       >
-        <div className="flex items-center gap-2 h-full text-white text-sm font-medium">
-          {node.type === "folder" ? (
-            expandedNodes.has(node.id) ? (
-              <FolderOpen className="h-4 w-4 flex-shrink-0" />
+        {isEditing ? (
+          <input
+            ref={inputRef}
+            value={editName}
+            onChange={(e) => setEditName(e.target.value)}
+            onBlur={handleSave}
+            onKeyDown={handleKeyDown}
+            className="w-full h-full bg-background text-foreground text-sm font-medium px-2 py-1 rounded border border-border focus:outline-none focus:ring-2 focus:ring-ring"
+            onClick={(e) => e.stopPropagation()}
+          />
+        ) : (
+          <div className="flex items-center gap-2 h-full text-white text-sm font-medium">
+            {node.type === "folder" ? (
+              expandedNodes.has(node.id) ? (
+                <FolderOpen className="h-4 w-4 flex-shrink-0" />
+              ) : (
+                <Folder className="h-4 w-4 flex-shrink-0" />
+              )
             ) : (
-              <Folder className="h-4 w-4 flex-shrink-0" />
-            )
-          ) : (
-            <div className="w-4 h-4 rounded-sm bg-white/20 flex-shrink-0" />
-          )}
-          <span className="truncate">{node.name}</span>
-        </div>
+              <div className="w-4 h-4 rounded-sm bg-white/20 flex-shrink-0" />
+            )}
+            <span className="truncate">{node.name}</span>
+          </div>
+        )}
       </foreignObject>
       
       {/* Tooltip */}
