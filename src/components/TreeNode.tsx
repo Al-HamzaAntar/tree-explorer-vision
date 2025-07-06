@@ -5,7 +5,7 @@ import { useState, useRef, useEffect } from "react";
 
 interface TreeNodeProps {
   node: NodePosition;
-  selectedNode: TreeNodeType | null;
+  selectedNodes: Set<string>;
   hoveredNode: string | null;
   expandedNodes: Set<string>;
   draggedNode: TreeNodeType | null;
@@ -14,7 +14,7 @@ interface TreeNodeProps {
   nodeWidth: number;
   nodeHeight: number;
   isNodeDragging: boolean;
-  onNodeClick: (node: TreeNodeType) => void;
+  onNodeClick: (node: TreeNodeType, e?: React.MouseEvent) => void;
   onMouseEnter: (nodeId: string) => void;
   onMouseLeave: () => void;
   onNodeDragStart: (e: React.DragEvent, node: TreeNodeType) => void;
@@ -27,7 +27,7 @@ interface TreeNodeProps {
 
 export function TreeNode({
   node,
-  selectedNode,
+  selectedNodes,
   hoveredNode,
   expandedNodes,
   draggedNode,
@@ -91,7 +91,7 @@ export function TreeNode({
   const getNodeColor = () => {
     if (draggedNode?.id === node.id) return "hsl(var(--muted))";
     if (dropTarget?.id === node.id && node.type === "folder") return "hsl(var(--ring))";
-    if (selectedNode?.id === node.id) return "hsl(var(--selected-node))";
+    if (selectedNodes.has(node.id)) return "hsl(var(--selected-node))";
     if (isNodeHighlighted()) return "hsl(var(--node-hover))";
     return node.type === "folder" ? "hsl(var(--folder-node))" : "hsl(var(--file-node))";
   };
@@ -112,10 +112,10 @@ export function TreeNode({
         height={nodeHeight}
         rx="6"
         fill={getNodeColor()}
-        stroke={selectedNode?.id === node.id ? "hsl(var(--ring))" : "transparent"}
+        stroke={selectedNodes.has(node.id) ? "hsl(var(--ring))" : "transparent"}
         strokeWidth="2"
         className="cursor-pointer transition-all duration-200 hover:opacity-80"
-        onClick={() => onNodeClick(node)}
+        onClick={(e) => onNodeClick(node, e)}
         onDoubleClick={handleDoubleClick}
         onMouseEnter={() => onMouseEnter(node.id)}
         onMouseLeave={onMouseLeave}

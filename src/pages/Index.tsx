@@ -3,10 +3,11 @@ import { InputForm, TreeNode } from "@/components/InputForm";
 import { TreeVisualization } from "@/components/TreeVisualization";
 import { NodeDetails } from "@/components/NodeDetails";
 import { SearchBar } from "@/components/SearchBar";
+import { BatchOperations } from "@/components/BatchOperations";
 
 const Index = () => {
   const [treeData, setTreeData] = useState<TreeNode | null>(null);
-  const [selectedNode, setSelectedNode] = useState<TreeNode | null>(null);
+  const [selectedNodes, setSelectedNodes] = useState<Set<string>>(new Set());
   const [searchTerm, setSearchTerm] = useState("");
 
   // Load data from localStorage on mount
@@ -24,7 +25,7 @@ const Index = () => {
 
   const handleDataSubmit = (data: TreeNode) => {
     setTreeData(data);
-    setSelectedNode(null);
+    setSelectedNodes(new Set());
     setSearchTerm("");
     
     // Save to localStorage
@@ -38,8 +39,35 @@ const Index = () => {
     localStorage.setItem('folderTreeData', JSON.stringify(data));
   };
 
-  const handleNodeSelect = (node: TreeNode) => {
-    setSelectedNode(node);
+  const handleNodeSelect = (nodeId: string, isMultiSelect: boolean) => {
+    if (isMultiSelect) {
+      setSelectedNodes(prev => {
+        const newSet = new Set(prev);
+        if (newSet.has(nodeId)) {
+          newSet.delete(nodeId);
+        } else {
+          newSet.add(nodeId);
+        }
+        return newSet;
+      });
+    } else {
+      setSelectedNodes(new Set([nodeId]));
+    }
+  };
+
+  const getSelectedNodesData = (): TreeNode[] => {
+    if (!treeData) return [];
+    
+    const nodes: TreeNode[] = [];
+    const collectNodes = (node: TreeNode) => {
+      if (selectedNodes.has(node.id)) {
+        nodes.push(node);
+      }
+      node.children?.forEach(collectNodes);
+    };
+    
+    collectNodes(treeData);
+    return nodes;
   };
 
   const handleSearch = (term: string) => {
@@ -72,6 +100,28 @@ const Index = () => {
         <SearchBar onSearch={handleSearch} searchTerm={searchTerm} />
       </div>
 
+      {/* Batch Operations */}
+      <div className="container mx-auto px-3 sm:px-6">
+        <BatchOperations
+          selectedNodes={getSelectedNodesData()}
+          onDelete={() => {
+            // TODO: Implement batch delete
+          }}
+          onMove={() => {
+            // TODO: Implement batch move
+          }}
+          onExpandAll={() => {
+            const folders = getSelectedNodesData().filter(node => node.type === "folder");
+            // TODO: Implement batch expand
+          }}
+          onCollapseAll={() => {
+            const folders = getSelectedNodesData().filter(node => node.type === "folder");
+            // TODO: Implement batch collapse
+          }}
+          onClearSelection={() => setSelectedNodes(new Set())}
+        />
+      </div>
+
       {/* Main Content */}
       <div className="container mx-auto px-3 sm:px-6 pb-6">
         <div className="flex flex-col lg:grid lg:grid-cols-12 gap-4 lg:gap-6 min-h-[calc(100vh-240px)] lg:h-[calc(100vh-200px)]">
@@ -84,7 +134,7 @@ const Index = () => {
           <div className="lg:col-span-6 order-3 lg:order-none min-h-[400px] lg:min-h-0">
             <TreeVisualization
               data={treeData}
-              selectedNode={selectedNode}
+              selectedNodes={selectedNodes}
               onNodeSelect={handleNodeSelect}
               onDataUpdate={handleDataUpdate}
               searchTerm={searchTerm}
@@ -93,7 +143,7 @@ const Index = () => {
 
           {/* Node Details */}
           <div className="lg:col-span-3 order-2 lg:order-none">
-            <NodeDetails node={selectedNode} />
+            <NodeDetails nodes={getSelectedNodesData()} />
           </div>
         </div>
       </div>

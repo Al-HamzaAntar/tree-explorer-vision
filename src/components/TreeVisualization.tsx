@@ -9,15 +9,15 @@ import { NodePosition } from "@/types/tree";
 
 interface TreeVisualizationProps {
   data: TreeNode | null;
-  selectedNode: TreeNode | null;
-  onNodeSelect: (node: TreeNode) => void;
+  selectedNodes: Set<string>;
+  onNodeSelect: (nodeId: string, isMultiSelect: boolean) => void;
   onDataUpdate?: (data: TreeNode) => void;
   searchTerm: string;
 }
 
 export function TreeVisualization({ 
   data, 
-  selectedNode, 
+  selectedNodes, 
   onNodeSelect, 
   onDataUpdate,
   searchTerm 
@@ -65,8 +65,10 @@ export function TreeVisualization({
     }
   }, [data, calculateLayout]);
 
-  const handleNodeClick = (node: TreeNode) => {
-    if (node.children) {
+  const handleNodeClick = (node: TreeNode, e?: React.MouseEvent) => {
+    const isMultiSelect = e?.ctrlKey || e?.metaKey;
+    
+    if (!isMultiSelect && node.children) {
       setExpandedNodes(prev => {
         const newSet = new Set(prev);
         if (newSet.has(node.id)) {
@@ -77,7 +79,8 @@ export function TreeVisualization({
         return newSet;
       });
     }
-    onNodeSelect(node);
+    
+    onNodeSelect(node.id, isMultiSelect);
   };
 
   const handleNodeRename = (nodeId: string, newName: string) => {
@@ -173,7 +176,7 @@ export function TreeVisualization({
             <TreeNodeComponent
               key={node.id}
               node={node}
-              selectedNode={selectedNode}
+              selectedNodes={selectedNodes}
               hoveredNode={hoveredNode}
               expandedNodes={expandedNodes}
               draggedNode={draggedNode}
