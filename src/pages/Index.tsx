@@ -39,6 +39,76 @@ const Index = () => {
     localStorage.setItem('folderTreeData', JSON.stringify(data));
   };
 
+  const handleBatchDelete = () => {
+    if (!treeData || selectedNodes.size === 0) return;
+    
+    const deleteNodes = (node: TreeNode): TreeNode | null => {
+      if (selectedNodes.has(node.id)) {
+        return null; // Mark for deletion
+      }
+      
+      if (node.children) {
+        const filteredChildren = node.children
+          .map(deleteNodes)
+          .filter((child): child is TreeNode => child !== null);
+        
+        return { ...node, children: filteredChildren };
+      }
+      
+      return node;
+    };
+    
+    const updatedData = deleteNodes(treeData);
+    if (updatedData) {
+      handleDataUpdate(updatedData);
+      setSelectedNodes(new Set());
+    }
+  };
+
+  const handleBatchExpandAll = () => {
+    if (!treeData) return;
+    
+    const expandSelectedFolders = (node: TreeNode): TreeNode => {
+      const shouldExpand = selectedNodes.has(node.id) && node.type === "folder";
+      
+      const updatedNode = {
+        ...node,
+        expanded: shouldExpand ? true : node.expanded
+      };
+      
+      if (node.children) {
+        updatedNode.children = node.children.map(expandSelectedFolders);
+      }
+      
+      return updatedNode;
+    };
+    
+    const updatedData = expandSelectedFolders(treeData);
+    handleDataUpdate(updatedData);
+  };
+
+  const handleBatchCollapseAll = () => {
+    if (!treeData) return;
+    
+    const collapseSelectedFolders = (node: TreeNode): TreeNode => {
+      const shouldCollapse = selectedNodes.has(node.id) && node.type === "folder";
+      
+      const updatedNode = {
+        ...node,
+        expanded: shouldCollapse ? false : node.expanded
+      };
+      
+      if (node.children) {
+        updatedNode.children = node.children.map(collapseSelectedFolders);
+      }
+      
+      return updatedNode;
+    };
+    
+    const updatedData = collapseSelectedFolders(treeData);
+    handleDataUpdate(updatedData);
+  };
+
   const handleNodeSelect = (nodeId: string, isMultiSelect: boolean) => {
     if (isMultiSelect) {
       setSelectedNodes(prev => {
@@ -104,20 +174,13 @@ const Index = () => {
       <div className="container mx-auto px-3 sm:px-6">
         <BatchOperations
           selectedNodes={getSelectedNodesData()}
-          onDelete={() => {
-            // TODO: Implement batch delete
-          }}
+          onDelete={handleBatchDelete}
           onMove={() => {
-            // TODO: Implement batch move
+            // TODO: Implement batch move - requires move destination selection UI
+            console.log("Move functionality not yet implemented");
           }}
-          onExpandAll={() => {
-            const folders = getSelectedNodesData().filter(node => node.type === "folder");
-            // TODO: Implement batch expand
-          }}
-          onCollapseAll={() => {
-            const folders = getSelectedNodesData().filter(node => node.type === "folder");
-            // TODO: Implement batch collapse
-          }}
+          onExpandAll={handleBatchExpandAll}
+          onCollapseAll={handleBatchCollapseAll}
           onClearSelection={() => setSelectedNodes(new Set())}
         />
       </div>
